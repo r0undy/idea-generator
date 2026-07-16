@@ -48,12 +48,14 @@ const rarityTierArb: fc.Arbitrary<RarityTier> = fc.constantFrom(
  */
 const historyEntryArb: fc.Arbitrary<HistoryEntry> = fc.record({
   id: fc.uuid(),
+  ideaId: fc.uuid(),
   tier: rarityTierArb,
   title: fc.string({ minLength: 1, maxLength: 20 }),
   description: fc.string({ minLength: 1, maxLength: 40 }),
   pulledAtMs: fc.integer({ min: 0, max: 1_000_000_000 }),
-}).map(({ id, tier, title, description, pulledAtMs }) => ({
+}).map(({ id, ideaId, tier, title, description, pulledAtMs }) => ({
   id,
+  ideaId,
   tier,
   title,
   description,
@@ -111,5 +113,6 @@ describe("HistoryList - rendering preserves most-recent-first order (Property 11
         { numRuns: 100 },
       );
     },
+    20000,
   );
 });

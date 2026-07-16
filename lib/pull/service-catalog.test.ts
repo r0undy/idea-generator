@@ -44,10 +44,20 @@ const projectIdeaRowArb = (tier: RarityTier): fc.Arbitrary<ProjectIdeaRow> =>
 /**
  * Builds a fake Supabase client whose `.eq("rarity_tier", tier)` resolves
  * with the rows supplied for that tier (or an empty array when the tier is
- * not present in `rowsByTier`), mirroring the
- * `supabase.from(table).select(columns).eq(column, value)` shape required
- * by `SupabaseIdeaSelectClient`.
+ * not present in `rowsByTier`), mirroring the chainable
+ * `supabase.from(table).select(columns).eq(...).eq(...)` shape required by
+ * `SupabaseIdeaSelectClient`. The first `.eq` picks rows by tier; the
+ * chained `.eq("is_active", true)` is a no-op in the mock (all rows active).
  */
+function chainableResult(data: ProjectIdeaRow[]) {
+  const resolved = Promise.resolve({ data, error: null });
+  const builder = {
+    eq: () => builder,
+    then: resolved.then.bind(resolved),
+  };
+  return builder;
+}
+
 function makeFakeClient(
   rowsByTier: Map<RarityTier, ProjectIdeaRow[]>,
 ): SupabaseIdeaSelectClient {
@@ -58,7 +68,7 @@ function makeFakeClient(
           return {
             eq(_column: string, value: string) {
               const data = rowsByTier.get(value as RarityTier) ?? [];
-              return Promise.resolve({ data, error: null });
+              return chainableResult(data);
             },
           };
         },

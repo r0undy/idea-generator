@@ -19,6 +19,7 @@
  */
 
 import { motion, useReducedMotion, type Variants } from "motion/react";
+import DownloadPrdButton from "@/components/prd/DownloadPrdButton";
 import type { RarityTier, PullResultItem } from "@/lib/pull/types";
 
 export interface ResultRevealProps {
@@ -186,6 +187,12 @@ function RevealCard({ item, reducedMotion, compact }: RevealCardProps) {
           )}
         </motion.div>
       )}
+
+      <DownloadPrdButton
+        ideaId={item.ideaId}
+        variant={compact ? "compact" : "full"}
+        className={compact ? "flex-none self-center" : "mt-1"}
+      />
     </div>
   );
 }

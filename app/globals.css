@@ -86,3 +86,26 @@ body {
     opacity: 1;
   }
 }
+
+/*
+ * Ghost vessel idle float (see components/pull/GhostVessel.tsx). A gentle
+ * perpetual bob so the mascot reads as "alive" at rest. Motivated as
+ * ambient character, so it is gated behind prefers-reduced-motion: the
+ * reduced-motion path renders GhostReducedMotion instead, but this class is
+ * also collapsed here as a belt-and-braces guard for any shared usage.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .ghost-float {
+    animation: ghost-float-bob 4.5s ease-in-out infinite;
+  }
+}
+
+@keyframes ghost-float-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3.5%);
+  }
+}

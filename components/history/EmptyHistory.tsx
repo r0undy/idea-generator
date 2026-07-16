@@ -7,19 +7,18 @@
 
 import Link from "next/link";
 
+import KiroGhost from "@/components/brand/KiroGhost";
+
 export default function EmptyHistory() {
   return (
     <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-4 rounded-xl border border-foreground/10 bg-[#15121e] px-6 py-10 text-center">
-      <div
-        className="h-12 w-12 flex-none rounded-full bg-foreground/10"
-        aria-hidden="true"
-      />
+      <KiroGhost size={48} className="text-brand/70" aria-hidden />
       <p className="text-sm text-foreground/70">
-        No pulls yet. Open the chest to get your first idea.
+        No pulls yet. Summon the ghost to get your first idea.
       </p>
       <Link
         href="/"
-        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-rarity-rare/50 bg-rarity-rare/10 px-5 text-sm font-medium text-rarity-rare"
+        className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-brand/50 bg-brand/10 px-5 text-sm font-medium text-brand transition-colors hover:bg-brand/20"
       >
         Go pull
       </Link>

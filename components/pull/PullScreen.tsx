@@ -1,8 +1,8 @@
 "use client";
 
 /**
- * PullScreen orchestrates the interactive pull experience: the chest
- * (Chest3D or its reduced-motion fallback), the pull controls, and the
+ * PullScreen orchestrates the interactive pull experience: the ghost vessel
+ * (GhostVessel or its reduced-motion fallback), the pull controls, and the
  * result reveal modal. This is the client-side island rendered by
  * app/page.tsx (a Server Component) so that only the interactive pieces
  * ship as client code (see design.md > "Layering").
@@ -12,26 +12,28 @@
  *      awarded items.
  *   2. This screen sets `tier` to the HIGHEST awarded tier (batch pulls use
  *      the best result to drive the pre-reveal color), which starts the
- *      chest's charge-up + open animation.
- *   3. When the chest's `onOpenComplete` fires, a modal appears showing the
+ *      ghost vessel's charge-up + open animation.
+ *   3. When the vessel's `onOpenComplete` fires, a modal appears showing the
  *      ResultReveal content (rarity color first, then idea text per the
  *      stagger).
  *   4. After a short auto-dismiss timer (or on user tap), the modal fades
- *      out, the chest resets to idle, and the player is ready for the next
+ *      out, the vessel resets to idle, and the player is ready for the next
  *      pull.
  *
- * Exactly one of Chest3D / ChestReducedMotion is mounted at a time, chosen
- * by `useReducedMotion()`, so the Three.js bundle is skipped entirely when
- * the user prefers reduced motion (Requirement 7.3).
+ * Exactly one of GhostVessel / GhostReducedMotion is mounted at a time, chosen
+ * by `useReducedMotion()`, so the charge/reveal/sparkle motion is skipped
+ * entirely when the user prefers reduced motion (Requirement 7.3).
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
-import Chest3D from "@/components/chest/Chest3D";
-import ChestReducedMotion from "@/components/chest/ChestReducedMotion";
+import { useSound } from "@/components/audio/useSound";
+import GhostVessel from "@/components/pull/GhostVessel";
+import GhostReducedMotion from "@/components/pull/GhostReducedMotion";
 import PullControls from "@/components/pull/PullControls";
 import ResultReveal from "@/components/pull/ResultReveal";
+import { PITY_THRESHOLD } from "@/lib/pull/types";
 import type { PullResultItem, RarityTier } from "@/lib/pull/types";
 
 /** Auto-dismiss delay: longer for batch (10 cards to scan) vs single. */
@@ -80,10 +82,14 @@ const RETRY_HINT = "Tap Pull x1 or Pull x10 to try again.";
 
 export default function PullScreen() {
   const prefersReducedMotion = useReducedMotion();
+  const { playPull, playReveal } = useSound();
   const [tier, setTier] = useState<RarityTier | null>(null);
   const [pendingItems, setPendingItems] = useState<PullResultItem[] | null>(null);
   const [revealItems, setRevealItems] = useState<PullResultItem[] | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  // Latest pity counter (null until the first pull this session). Drives the
+  // "pulls until a guaranteed Super Rare" meter below the controls.
+  const [pity, setPity] = useState<number | null>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** Dismiss the modal and reset the chest to idle. */
@@ -116,13 +122,17 @@ export default function PullScreen() {
     setRevealItems(null);
     setPendingItems(null);
     setTier(null);
-  }, []);
+    // Anticipation cue, fired on the tap itself (a user gesture, so the
+    // AudioContext is allowed to start).
+    playPull();
+  }, [playPull]);
 
   const handlePullSuccess = useCallback(
     (result: { items: PullResultItem[]; pityAfter: number }) => {
       setErrorCode(null);
       setPendingItems(result.items);
       setTier(highestTier(result.items));
+      setPity(result.pityAfter);
     },
     [],
   );
@@ -140,23 +150,40 @@ export default function PullScreen() {
 
   const handleOpenComplete = useCallback(() => {
     setRevealItems(pendingItems);
-  }, [pendingItems]);
+    // Reveal cue escalates with the best tier in the pull (matching the
+    // pre-reveal aura color the vessel just showed).
+    if (pendingItems && pendingItems.length > 0) {
+      playReveal(highestTier(pendingItems));
+    }
+  }, [pendingItems, playReveal]);
 
-  const chest = prefersReducedMotion ? (
-    <ChestReducedMotion tier={tier} onOpenComplete={handleOpenComplete} />
+  // Keyed by the current tier so each pull remounts the vessel: this restarts
+  // the charge/reveal sequence cleanly (handlePullStart always resets tier to
+  // null first, so the key toggles idle <-> tier on every pull).
+  const vesselKey = tier ?? "idle";
+  const vessel = prefersReducedMotion ? (
+    <GhostReducedMotion
+      key={vesselKey}
+      tier={tier}
+      onOpenComplete={handleOpenComplete}
+    />
   ) : (
-    <Chest3D tier={tier} onOpenComplete={handleOpenComplete} />
+    <GhostVessel
+      key={vesselKey}
+      tier={tier}
+      onOpenComplete={handleOpenComplete}
+    />
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center gap-8 px-4 py-8 sm:px-6 sm:py-12">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center gap-7 px-4 py-8 sm:px-6 sm:py-10">
       <motion.div
         className="w-full"
         initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.5, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
       >
-        {chest}
+        {vessel}
       </motion.div>
 
       <motion.div
@@ -171,6 +198,35 @@ export default function PullScreen() {
           onPullError={handlePullError}
         />
       </motion.div>
+
+      {/* Pity meter: appears once the user has pulled this session. Shows real
+       * game state (progress toward the guaranteed Super Rare at the pity
+       * threshold), so the bar communicates meaning rather than decoration. */}
+      {pity !== null ? (
+        <div className="w-full max-w-xs">
+          <div className="mb-1.5 flex items-center justify-between text-xs text-foreground/60">
+            <span>Guaranteed Super Rare</span>
+            <span className="font-medium text-foreground/80">
+              {Math.max(0, PITY_THRESHOLD - pity)} pulls left
+            </span>
+          </div>
+          <div
+            className="h-1.5 w-full overflow-hidden rounded-full bg-white/8"
+            role="progressbar"
+            aria-valuemin={0}
+            aria-valuemax={PITY_THRESHOLD}
+            aria-valuenow={Math.min(pity, PITY_THRESHOLD)}
+            aria-label="Progress toward a guaranteed Super Rare"
+          >
+            <div
+              className="h-full rounded-full bg-rarity-super-rare transition-[width] duration-500"
+              style={{
+                width: `${Math.min(100, (pity / PITY_THRESHOLD) * 100)}%`,
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <AnimatePresence>
         {errorContent ? (

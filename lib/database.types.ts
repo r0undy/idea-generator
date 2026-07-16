@@ -44,23 +44,38 @@ export type Database = {
       project_ideas: {
         Row: {
           created_at: string;
+          data_model: Json;
           description: string;
+          features: Json;
           id: string;
+          is_active: boolean;
           rarity_tier: string;
+          stretch_goals: Json;
+          tagline: string;
           title: string;
         };
         Insert: {
           created_at?: string;
+          data_model?: Json;
           description: string;
+          features?: Json;
           id?: string;
+          is_active?: boolean;
           rarity_tier: string;
+          stretch_goals?: Json;
+          tagline?: string;
           title: string;
         };
         Update: {
           created_at?: string;
+          data_model?: Json;
           description?: string;
+          features?: Json;
           id?: string;
+          is_active?: boolean;
           rarity_tier?: string;
+          stretch_goals?: Json;
+          tagline?: string;
           title?: string;
         };
         Relationships: [];

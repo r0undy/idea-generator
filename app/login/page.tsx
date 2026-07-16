@@ -1,5 +1,7 @@
 import { login, signup } from "./actions";
 
+import KiroGhost from "@/components/brand/KiroGhost";
+
 /**
  * Login / sign-up screen (Server Component shell around server-action
  * forms - no client JS required for auth itself).
@@ -20,11 +22,9 @@ export default async function LoginPage({
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 sm:px-6">
       <div className="w-full max-w-sm rounded-2xl border-2 border-brand/35 bg-[#15121e] p-6 shadow-[0_0_32px_-4px_var(--color-brand)] sm:p-8">
-        <div className="mb-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand/80">
-            Kiro Idea Vault
-          </p>
-          <h2 className="mt-2 font-display text-2xl font-semibold tracking-tight text-foreground">
+        <div className="mb-6 flex flex-col items-center text-center">
+          <KiroGhost size={52} className="text-brand" />
+          <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight text-foreground">
             Enter the vault
           </h2>
           <p className="mt-1 text-sm text-foreground/70">

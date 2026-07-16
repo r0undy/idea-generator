@@ -5,6 +5,8 @@ import "./globals.css";
 
 import FantasyBackground from "@/components/background/FantasyBackground";
 import SignOutButton from "@/components/auth/SignOutButton";
+import MuteToggle from "@/components/audio/MuteToggle";
+import KiroGhost from "@/components/brand/KiroGhost";
 import { createClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({
@@ -39,13 +41,16 @@ export default async function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <FantasyBackground />
-        <header className="flex items-center justify-between gap-4 px-4 pt-6 sm:px-6 sm:pt-8">
-          <Link href="/" className="flex items-center gap-2.5 text-left">
+        <header className="mx-auto flex w-full max-w-2xl items-center justify-between gap-4 px-4 pt-6 sm:px-6 sm:pt-8">
+          <Link
+            href="/"
+            className="group flex items-center gap-2.5 text-left rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+          >
             <span
               aria-hidden="true"
-              className="flex h-7 w-7 flex-none items-center justify-center rounded-md bg-brand/15 ring-1 ring-brand/40"
+              className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-brand/12 ring-1 ring-brand/35 transition-transform group-hover:-translate-y-0.5 motion-reduce:transform-none"
             >
-              <span className="h-2.5 w-2.5 rounded-sm bg-brand" />
+              <KiroGhost size={22} className="text-brand" />
             </span>
             <span className="flex flex-col leading-none">
               <span className="font-display text-base font-semibold tracking-tight text-foreground sm:text-lg">
@@ -56,17 +61,20 @@ export default async function RootLayout({
               </span>
             </span>
           </Link>
-          {user ? (
-            <nav className="flex items-center gap-3">
-              <Link
-                href="/history"
-                className="text-xs font-semibold uppercase tracking-wide text-foreground/70 hover:text-foreground"
-              >
-                History
-              </Link>
-              <SignOutButton />
-            </nav>
-          ) : null}
+          <nav className="flex items-center gap-2 sm:gap-3">
+            <MuteToggle />
+            {user ? (
+              <>
+                <Link
+                  href="/history"
+                  className="text-xs font-semibold uppercase tracking-wide text-foreground/70 hover:text-foreground"
+                >
+                  History
+                </Link>
+                <SignOutButton />
+              </>
+            ) : null}
+          </nav>
         </header>
         <main className="flex flex-1 flex-col">{children}</main>
       </body>

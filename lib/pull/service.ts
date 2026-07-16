@@ -26,6 +26,20 @@ export interface ProjectIdeaRow {
 }
 
 /**
+ * A chainable, awaitable filter builder (the subset of Supabase's
+ * PostgrestFilterBuilder we use): each `.eq(...)` narrows the query and the
+ * builder itself resolves to the rows. This lets us chain
+ * `.eq("rarity_tier", tier).eq("is_active", true)`.
+ */
+export interface IdeaFilterBuilder
+  extends PromiseLike<{
+    data: ProjectIdeaRow[] | null;
+    error: { message: string } | null;
+  }> {
+  eq(column: string, value: string | boolean): IdeaFilterBuilder;
+}
+
+/**
  * Minimal structural shape of the Supabase client required to select
  * catalog ideas by tier. Matches the
  * `supabase.from(table).select(columns).eq(column, value)` pattern used by
@@ -34,13 +48,7 @@ export interface ProjectIdeaRow {
 export interface SupabaseIdeaSelectClient {
   from(table: string): {
     select(columns: string): {
-      eq(
-        column: string,
-        value: string,
-      ): PromiseLike<{
-        data: ProjectIdeaRow[] | null;
-        error: { message: string } | null;
-      }>;
+      eq(column: string, value: string): IdeaFilterBuilder;
     };
   };
 }
@@ -79,10 +87,13 @@ async function fetchIdeasForTier(
   client: SupabaseIdeaSelectClient,
   tier: RarityTier,
 ): Promise<ProjectIdeaRow[]> {
+  // Only active (currently-seeded) ideas are drawable; retired rows are kept
+  // for pull_history FK integrity but excluded here (see the reseed migration).
   const { data, error } = await client
     .from("project_ideas")
     .select("id, title, description, rarity_tier")
-    .eq("rarity_tier", tier);
+    .eq("rarity_tier", tier)
+    .eq("is_active", true);
 
   if (error) {
     throw new CatalogError(

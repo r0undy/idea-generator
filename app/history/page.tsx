@@ -17,9 +17,17 @@ import Link from "next/link";
 
 import EmptyHistory from "@/components/history/EmptyHistory";
 import HistoryList, { type HistoryEntry } from "@/components/history/HistoryList";
+import HistoryPagination from "@/components/history/HistoryPagination";
 import { createClient } from "@/lib/supabase/server";
 
-export default async function HistoryPage() {
+/** Rows per page. Kept small so a page of cards fits comfortably on mobile. */
+const PAGE_SIZE = 10;
+
+export default async function HistoryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const supabase = await createClient();
 
   const {
@@ -42,12 +50,25 @@ export default async function HistoryPage() {
     );
   }
 
+  const params = await searchParams;
+  const requestedPage = Number.parseInt(params.page ?? "1", 10);
+  const currentPage =
+    Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+  const from = (currentPage - 1) * PAGE_SIZE;
+  const to = from + PAGE_SIZE - 1;
+
   // pull_history.idea_id -> project_ideas.id (FK). Ordered by pulled_at
-  // descending per Requirement 6.2 (most-recent-first).
-  const { data, error } = await supabase
+  // descending per Requirement 6.2 (most-recent-first). `count: "exact"` +
+  // `.range()` gives us both the page of rows and the total row count in one
+  // query, which is all pagination needs.
+  const { data, error, count } = await supabase
     .from("pull_history")
-    .select("id, rarity_tier, pulled_at, project_ideas(title, description)")
-    .order("pulled_at", { ascending: false });
+    .select(
+      "id, idea_id, rarity_tier, pulled_at, project_ideas(id, title, description)",
+      { count: "exact" },
+    )
+    .order("pulled_at", { ascending: false })
+    .range(from, to);
 
   if (error) {
     return (
@@ -71,6 +92,7 @@ export default async function HistoryPage() {
 
     return {
       id: row.id,
+      ideaId: idea?.id ?? row.idea_id,
       tier: row.rarity_tier as HistoryEntry["tier"],
       pulledAt: row.pulled_at,
       title: idea?.title ?? "Unknown idea",
@@ -78,16 +100,25 @@ export default async function HistoryPage() {
     };
   });
 
+  const totalCount = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  // A page number past the last real page (e.g. from a stale bookmark after
+  // history shrinks) still renders cleanly: no rows, pagination clamps links.
+  const safePage = Math.min(currentPage, totalPages);
+
   return (
     <div className="flex flex-1 flex-col gap-6 px-4 py-10 sm:px-6">
       <h1 className="text-center font-display text-2xl font-semibold tracking-wide sm:text-3xl">
         Pull History
       </h1>
-      <div className="mx-auto w-full max-w-lg">
+      <div className="mx-auto flex w-full max-w-lg flex-col gap-6">
         {entries.length === 0 ? (
           <EmptyHistory />
         ) : (
-          <HistoryList entries={entries} />
+          <>
+            <HistoryList entries={entries} />
+            <HistoryPagination currentPage={safePage} totalPages={totalPages} />
+          </>
         )}
       </div>
     </div>

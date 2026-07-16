@@ -15,10 +15,13 @@
  * app/globals.css. No new colors are introduced here.
  */
 
+import DownloadPrdButton from "@/components/prd/DownloadPrdButton";
 import type { RarityTier } from "@/lib/pull/types";
 
 export interface HistoryEntry {
   id: string;
+  /** The catalog idea id, used to download this idea's PRD. */
+  ideaId: string;
   tier: RarityTier;
   pulledAt: string;
   title: string;
@@ -110,12 +113,18 @@ export default function HistoryList({ entries }: HistoryListProps) {
                 <p className="text-sm text-foreground/80">
                   {entry.description}
                 </p>
-                <time
-                  dateTime={entry.pulledAt}
-                  className="text-xs text-foreground/50"
-                >
-                  {formatPulledAt(entry.pulledAt)}
-                </time>
+                <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+                  <time
+                    dateTime={entry.pulledAt}
+                    className="text-xs text-foreground/50"
+                  >
+                    {formatPulledAt(entry.pulledAt)}
+                  </time>
+                  <DownloadPrdButton
+                    ideaId={entry.ideaId}
+                    variant="compact"
+                  />
+                </div>
               </div>
             </div>
           </li>

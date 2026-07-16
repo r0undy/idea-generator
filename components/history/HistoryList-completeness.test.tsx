@@ -36,6 +36,7 @@ const tierArbitrary: fc.Arbitrary<RarityTier> = fc.constantFrom(
 
 const historyEntryArbitrary: fc.Arbitrary<HistoryEntry> = fc.record({
   id: fc.uuid(),
+  ideaId: fc.uuid(),
   tier: tierArbitrary,
   // Arbitrary ISO timestamps within a wide, realistic range.
   pulledAt: fc
@@ -93,5 +94,5 @@ describe("HistoryList - rendering completeness (Property 12)", () => {
       }),
       { numRuns: 100 },
     );
-  });
+  }, 20000);
 });

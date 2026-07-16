@@ -135,8 +135,14 @@ function makeSessionClientForUser(options: {
         return {
           select(_columns: string) {
             return {
-              eq(_column: string, _value: string) {
-                return Promise.resolve({ data: IDEA_ROWS, error: null });
+              // Chainable to support .eq("rarity_tier", ...).eq("is_active", true).
+              eq(_column: string, _value: string | boolean) {
+                const resolved = Promise.resolve({ data: IDEA_ROWS, error: null });
+                const builder = {
+                  eq: () => builder,
+                  then: resolved.then.bind(resolved),
+                };
+                return builder;
               },
             };
           },
