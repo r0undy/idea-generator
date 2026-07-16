@@ -34,6 +34,16 @@ export default async function RootLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Onboarded = has picked a display name. The primary nav (Leaderboard,
+  // History) only appears once onboarding is complete, so it isn't shown on
+  // the onboarding step itself (where those links would just bounce back).
+  const hasName = Boolean(
+    String(
+      (user?.user_metadata as Record<string, unknown> | undefined)
+        ?.first_name ?? "",
+    ).trim(),
+  );
+
   return (
     <html
       lang="en"
@@ -64,18 +74,22 @@ export default async function RootLayout({
           <nav className="flex items-center gap-3 sm:gap-4">
             {user ? (
               <>
-                <Link
-                  href="/leaderboard"
-                  className="text-xs font-semibold uppercase tracking-wide text-foreground/70 hover:text-foreground"
-                >
-                  Leaderboard
-                </Link>
-                <Link
-                  href="/history"
-                  className="text-xs font-semibold uppercase tracking-wide text-foreground/70 hover:text-foreground"
-                >
-                  History
-                </Link>
+                {hasName ? (
+                  <>
+                    <Link
+                      href="/leaderboard"
+                      className="text-xs font-semibold uppercase tracking-wide text-foreground/70 hover:text-foreground"
+                    >
+                      Leaderboard
+                    </Link>
+                    <Link
+                      href="/history"
+                      className="text-xs font-semibold uppercase tracking-wide text-foreground/70 hover:text-foreground"
+                    >
+                      History
+                    </Link>
+                  </>
+                ) : null}
                 <SignOutButton />
               </>
             ) : null}

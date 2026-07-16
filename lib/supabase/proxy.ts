@@ -12,9 +12,12 @@ import { NextResponse, type NextRequest } from "next/server";
  * per-user. Signed-in users without a display name yet are routed to
  * `/onboarding` until they complete it.
  *
- * Uses `getClaims()` rather than `getSession()` to verify identity: it
- * validates the JWT signature rather than trusting an unverified session
- * read from cookies.
+ * Uses `getUser()` to verify identity: it revalidates against the Auth server
+ * rather than trusting an unverified cookie. This also returns the freshest
+ * `user_metadata`, which the onboarding gate depends on: `updateUser()` saves
+ * the name to the user record without immediately reissuing the access-token
+ * JWT, so reading the name from the JWT (via `getClaims()`) would be stale and
+ * trap the user on /onboarding forever.
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -47,10 +50,11 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  // Do not run code between createServerClient and getClaims() - see
+  // Do not run code between createServerClient and getUser() - see
   // Supabase's SSR auth guide for why this ordering matters.
-  const { data } = await supabase.auth.getClaims();
-  const user = data?.claims;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
   const isAuthPage =
@@ -69,10 +73,10 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user) {
-    // Onboarding is complete once a first name is present in user_metadata
-    // (included in the JWT claims, so this needs no extra DB read).
-    const metadata = (user as { user_metadata?: Record<string, unknown> })
-      .user_metadata;
+    // Onboarding is complete once a first name is present in user_metadata.
+    // Read from the authoritative user object (getUser), not the JWT, so a
+    // freshly-saved name is seen immediately.
+    const metadata = user.user_metadata as Record<string, unknown> | undefined;
     const hasName = Boolean(String(metadata?.first_name ?? "").trim());
     const onOnboarding = pathname.startsWith("/onboarding");
 
