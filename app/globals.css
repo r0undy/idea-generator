@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+/*
+ * Dark fantasy gacha theme. The app defaults to a dark backdrop (chest,
+ * pull screen, history) rather than following OS light/dark preference,
+ * since the rarity accent colors (silver/purple/gold) are tuned for a dark
+ * stage. One accent is "locked" per rarity tier and reused everywhere a
+ * tier needs to be represented (chest glow, result reveal, history badges).
+ */
+:root {
+  --background: #0b0a10;
+  --foreground: #f3f1f7;
+
+  /* Kiro brand accent (product-family identity, distinct from the rarity
+   * system below): Kiro's signature pink/magenta. Used for brand chrome -
+   * the logo mark, primary nav/link states, focus rings - never for rarity
+   * meaning, so it never collides with the silver/purple/gold system. */
+  --color-brand: #ff5fa8;
+  --color-brand-dim: #ff5fa8b3;
+
+  /* Rarity accents - keep in sync with lib/pull/types.ts RARITY_COLOR. */
+  --color-rarity-common: #c7cdd6; /* silver */
+  --color-rarity-rare: #a56cf0; /* purple */
+  --color-rarity-super-rare: #f2c14e; /* gold */
+
+  /* Display font: Kiro's product chrome uses a clean geometric sans, not a
+   * medieval serif, so headings reuse the Geist family already loaded for
+   * body text (see app/layout.tsx) rather than a fantasy display face. This
+   * keeps the chest/reveal moment fantasy-themed via color and motion, while
+   * the surrounding chrome (header, nav, login) reads as Kiro-family. */
+  --font-display: var(--font-geist-sans), "Geist", ui-sans-serif, sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-display);
+
+  --color-brand: var(--color-brand);
+  --color-brand-dim: var(--color-brand-dim);
+
+  /* Rarity tokens exposed as Tailwind utilities:
+   * bg-rarity-common / text-rarity-rare / border-rarity-super-rare, etc. */
+  --color-rarity-common: var(--color-rarity-common);
+  --color-rarity-rare: var(--color-rarity-rare);
+  --color-rarity-super-rare: var(--color-rarity-super-rare);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/*
+ * FantasyBackground ember drift (see components/background/FantasyBackground.tsx).
+ * Purely decorative page-chrome motion: slow breathing glow + gentle drift.
+ * Motivated as atmosphere/mood-setting for the gacha world, not attention-
+ * grabbing UI motion. Gated behind prefers-reduced-motion so it collapses to
+ * a static backdrop automatically - no JS branch required for this piece.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .fantasy-ember {
+    animation: fantasy-ember-drift 18s ease-in-out infinite;
+  }
+  .fantasy-ember--purple {
+    animation-duration: 22s;
+    animation-delay: -4s;
+  }
+  .fantasy-ember--silver {
+    animation-duration: 26s;
+    animation-delay: -10s;
+  }
+}
+
+@keyframes fantasy-ember-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(2%, -3%) scale(1.08);
+    opacity: 1;
+  }
+}
