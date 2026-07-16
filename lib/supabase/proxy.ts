@@ -6,10 +6,11 @@ import { NextResponse, type NextRequest } from "next/server";
  * unauthenticated visitors to `/login`. Called from the root `proxy.ts`
  * (Next.js 16's file-based request interception convention).
  *
- * Routes left public: `/login` (the login/signup screen) and `/auth/*`
- * (the email-confirmation callback). Everything else - the pull screen and
- * the history view - requires a session, since pulls, pity, and history are
- * per-user.
+ * Routes left public: `/login`, `/register`, and `/auth/*` (the email-
+ * confirmation callback). Everything else - the pull screen, history,
+ * leaderboard - requires a session, since pulls, pity, and history are
+ * per-user. Signed-in users without a display name yet are routed to
+ * `/onboarding` until they complete it.
  *
  * Uses `getClaims()` rather than `getSession()` to verify identity: it
  * validates the JWT signature rather than trusting an unverified session
@@ -52,18 +53,38 @@ export async function updateSession(request: NextRequest) {
   const user = data?.claims;
 
   const { pathname } = request.nextUrl;
-  const isPublicRoute = pathname.startsWith("/login") || pathname.startsWith("/auth");
+  const isAuthPage =
+    pathname.startsWith("/login") || pathname.startsWith("/register");
+  const isPublicRoute = isAuthPage || pathname.startsWith("/auth");
+
+  const redirectTo = (path: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = path;
+    url.search = "";
+    return NextResponse.redirect(url);
+  };
 
   if (!user && !isPublicRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return redirectTo("/login");
   }
 
-  if (user && pathname.startsWith("/login")) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+  if (user) {
+    // Onboarding is complete once a first name is present in user_metadata
+    // (included in the JWT claims, so this needs no extra DB read).
+    const metadata = (user as { user_metadata?: Record<string, unknown> })
+      .user_metadata;
+    const hasName = Boolean(String(metadata?.first_name ?? "").trim());
+    const onOnboarding = pathname.startsWith("/onboarding");
+
+    if (isAuthPage) {
+      return redirectTo(hasName ? "/" : "/onboarding");
+    }
+    if (!hasName && !onOnboarding) {
+      return redirectTo("/onboarding");
+    }
+    if (hasName && onOnboarding) {
+      return redirectTo("/");
+    }
   }
 
   return supabaseResponse;

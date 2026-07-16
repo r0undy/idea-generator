@@ -27,6 +27,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { X } from "@phosphor-icons/react";
 
 import { useSound } from "@/components/audio/useSound";
 import GhostVessel from "@/components/pull/GhostVessel";
@@ -36,9 +37,8 @@ import ResultReveal from "@/components/pull/ResultReveal";
 import { PITY_THRESHOLD } from "@/lib/pull/types";
 import type { PullResultItem, RarityTier } from "@/lib/pull/types";
 
-/** Auto-dismiss delay: longer for batch (10 cards to scan) vs single. */
+/** Auto-dismiss delay for a single pull. Batch pulls do not auto-dismiss. */
 const DISMISS_MS_SINGLE = 4000;
-const DISMISS_MS_BATCH = 7000;
 
 /** Ranks tiers so the highest-rarity result can drive the chest's pre-reveal color. */
 const TIER_RANK: Record<RarityTier, number> = {
@@ -103,12 +103,14 @@ export default function PullScreen() {
     setTier(null);
   }, []);
 
-  /** Start the auto-dismiss countdown when items are revealed. */
+  /**
+   * Start the auto-dismiss countdown for single pulls only. Batch (10x) pulls
+   * open a carousel the user browses at their own pace, so they stay open until
+   * the user closes them (via the close button or the backdrop).
+   */
   useEffect(() => {
-    if (!revealItems) return;
-    const delay =
-      revealItems.length > 1 ? DISMISS_MS_BATCH : DISMISS_MS_SINGLE;
-    dismissTimerRef.current = setTimeout(dismissReveal, delay);
+    if (!revealItems || revealItems.length > 1) return;
+    dismissTimerRef.current = setTimeout(dismissReveal, DISMISS_MS_SINGLE);
     return () => {
       if (dismissTimerRef.current) {
         clearTimeout(dismissTimerRef.current);
@@ -175,8 +177,43 @@ export default function PullScreen() {
     />
   );
 
+  const isBatchReveal = (revealItems?.length ?? 0) > 1;
+
+  // Pity meter: appears once the user has pulled this session. Shows real game
+  // state (progress toward the guaranteed Super Rare at the pity threshold),
+  // so the bar communicates meaning rather than decoration. Rendered above the
+  // ghost so it reads as a status header for the summon.
+  const pityMeter =
+    pity !== null ? (
+      <div className="w-full max-w-xs">
+        <div className="mb-1.5 flex items-center justify-between text-xs text-foreground/60">
+          <span>Guaranteed Super Rare</span>
+          <span className="font-medium text-foreground/80">
+            {Math.max(0, PITY_THRESHOLD - pity)} pulls left
+          </span>
+        </div>
+        <div
+          className="h-1.5 w-full overflow-hidden rounded-full bg-white/8"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={PITY_THRESHOLD}
+          aria-valuenow={Math.min(pity, PITY_THRESHOLD)}
+          aria-label="Progress toward a guaranteed Super Rare"
+        >
+          <div
+            className="h-full rounded-full bg-rarity-super-rare transition-[width] duration-500"
+            style={{
+              width: `${Math.min(100, (pity / PITY_THRESHOLD) * 100)}%`,
+            }}
+          />
+        </div>
+      </div>
+    ) : null;
+
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center gap-7 px-4 py-8 sm:px-6 sm:py-10">
+      {pityMeter}
+
       <motion.div
         className="w-full"
         initial={prefersReducedMotion ? false : { opacity: 0, y: 16 }}
@@ -198,35 +235,6 @@ export default function PullScreen() {
           onPullError={handlePullError}
         />
       </motion.div>
-
-      {/* Pity meter: appears once the user has pulled this session. Shows real
-       * game state (progress toward the guaranteed Super Rare at the pity
-       * threshold), so the bar communicates meaning rather than decoration. */}
-      {pity !== null ? (
-        <div className="w-full max-w-xs">
-          <div className="mb-1.5 flex items-center justify-between text-xs text-foreground/60">
-            <span>Guaranteed Super Rare</span>
-            <span className="font-medium text-foreground/80">
-              {Math.max(0, PITY_THRESHOLD - pity)} pulls left
-            </span>
-          </div>
-          <div
-            className="h-1.5 w-full overflow-hidden rounded-full bg-white/8"
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={PITY_THRESHOLD}
-            aria-valuenow={Math.min(pity, PITY_THRESHOLD)}
-            aria-label="Progress toward a guaranteed Super Rare"
-          >
-            <div
-              className="h-full rounded-full bg-rarity-super-rare transition-[width] duration-500"
-              style={{
-                width: `${Math.min(100, (pity / PITY_THRESHOLD) * 100)}%`,
-              }}
-            />
-          </div>
-        </div>
-      ) : null}
 
       <AnimatePresence>
         {errorContent ? (
@@ -268,21 +276,37 @@ export default function PullScreen() {
               aria-hidden="true"
             />
 
-            {/* Modal content */}
+            {/* Modal content. No tap-to-close here: a batch pull renders an
+             * interactive carousel, so closing is explicit (the button below
+             * or the backdrop) to avoid closing mid-browse. */}
             <motion.div
-              className="relative z-10 w-full max-w-sm max-h-[80vh] overflow-y-auto rounded-2xl border border-foreground/10 bg-[#12101a] p-5 shadow-xl sm:max-w-md sm:p-6"
+              className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-foreground/10 bg-[#12101a] p-5 shadow-2xl sm:max-w-md sm:p-6"
               initial={prefersReducedMotion ? false : { scale: 0.92, y: 24 }}
               animate={{ scale: 1, y: 0 }}
               exit={prefersReducedMotion ? undefined : { scale: 0.92, y: 24, opacity: 0 }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               role="dialog"
+              aria-modal="true"
               aria-label="Pull results"
-              onClick={dismissReveal}
             >
+              <button
+                type="button"
+                onClick={dismissReveal}
+                aria-label="Close results"
+                className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-foreground/15 bg-white/5 text-foreground/70 transition-colors hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+              >
+                <X size={16} weight="bold" aria-hidden="true" />
+              </button>
+
               <ResultReveal items={revealItems} />
-              <p className="mt-4 text-center text-xs text-foreground/50">
-                Tap anywhere to close
-              </p>
+
+              <button
+                type="button"
+                onClick={dismissReveal}
+                className="mt-4 min-h-11 w-full rounded-lg border border-foreground/15 bg-white/5 text-sm font-medium text-foreground/80 transition-colors hover:bg-white/10 active:scale-[0.99] motion-reduce:active:scale-100"
+              >
+                {isBatchReveal ? "Done" : "Close"}
+              </button>
             </motion.div>
           </motion.div>
         ) : null}

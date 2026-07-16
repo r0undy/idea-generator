@@ -61,10 +61,15 @@ export default async function RootLayout({
               </span>
             </span>
           </Link>
-          <nav className="flex items-center gap-2 sm:gap-3">
-            <MuteToggle />
+          <nav className="flex items-center gap-3 sm:gap-4">
             {user ? (
               <>
+                <Link
+                  href="/leaderboard"
+                  className="text-xs font-semibold uppercase tracking-wide text-foreground/70 hover:text-foreground"
+                >
+                  Leaderboard
+                </Link>
                 <Link
                   href="/history"
                   className="text-xs font-semibold uppercase tracking-wide text-foreground/70 hover:text-foreground"
@@ -74,6 +79,7 @@ export default async function RootLayout({
                 <SignOutButton />
               </>
             ) : null}
+            <MuteToggle />
           </nav>
         </header>
         <main className="flex flex-1 flex-col">{children}</main>
