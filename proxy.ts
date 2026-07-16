@@ -19,7 +19,11 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      * - image assets (fantasy background, etc.)
+     * - icon / apple-icon / opengraph-image / twitter-image (code-generated
+     *   metadata images, e.g. app/icon.tsx, app/opengraph-image.tsx - social
+     *   crawlers and share-preview fetchers hit these unauthenticated, so
+     *   they must never be redirected to /login)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icon|apple-icon|opengraph-image|twitter-image|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
