@@ -97,7 +97,7 @@ export default function PullControls({
           onClick={() => runPull("single")}
           disabled={pending}
           aria-disabled={pending}
-          className="min-h-11 min-w-11 flex-1 max-w-40 rounded-lg border border-rarity-common/50 bg-rarity-common/10 px-4 py-3 text-sm font-semibold text-rarity-common transition-[background-color,transform] duration-150 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97] active:bg-rarity-common/20 motion-reduce:active:scale-100"
+          className="min-h-11 min-w-11 flex-1 max-w-40 rounded-xl border border-black/20 bg-rarity-common px-4 py-3 text-sm font-bold text-[#1a1524] shadow-[inset_0_2px_0_rgba(255,255,255,0.6),inset_0_-3px_4px_rgba(0,0,0,0.25),0_4px_0_rgba(0,0,0,0.35),0_6px_10px_rgba(0,0,0,0.3)] transition-[transform,box-shadow] duration-100 disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-[3px] active:shadow-[inset_0_2px_0_rgba(255,255,255,0.4),inset_0_2px_4px_rgba(0,0,0,0.3),0_1px_0_rgba(0,0,0,0.35)] motion-reduce:active:translate-y-0"
         >
           Pull x1
         </button>
@@ -106,7 +106,7 @@ export default function PullControls({
           onClick={() => runPull("batch")}
           disabled={pending}
           aria-disabled={pending}
-          className="min-h-11 min-w-11 flex-1 max-w-40 rounded-lg border-2 border-rarity-super-rare/60 bg-rarity-super-rare/10 px-4 py-3 text-sm font-semibold text-rarity-super-rare transition-[background-color,transform] duration-150 disabled:cursor-not-allowed disabled:opacity-50 active:scale-[0.97] active:bg-rarity-super-rare/20 motion-reduce:active:scale-100"
+          className="min-h-11 min-w-11 flex-1 max-w-40 rounded-xl border border-black/20 bg-rarity-super-rare px-4 py-3 text-sm font-bold text-[#1a1524] shadow-[inset_0_2px_0_rgba(255,255,255,0.7),inset_0_-3px_4px_rgba(0,0,0,0.3),0_4px_0_rgba(158,110,0,0.55),0_6px_14px_rgba(242,193,78,0.35)] transition-[transform,box-shadow] duration-100 disabled:cursor-not-allowed disabled:opacity-50 active:translate-y-[3px] active:shadow-[inset_0_2px_0_rgba(255,255,255,0.5),inset_0_2px_4px_rgba(0,0,0,0.35),0_1px_0_rgba(158,110,0,0.55)] motion-reduce:active:translate-y-0"
         >
           Pull x10
         </button>

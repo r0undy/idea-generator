@@ -137,7 +137,7 @@ export default async function LeaderboardPage({
         <h1 className="font-display text-2xl font-semibold tracking-wide sm:text-3xl">
           Leaderboard
         </h1>
-        <p className="mt-1 text-sm text-foreground/75">
+        <p className="mt-1 text-sm font-medium text-foreground/90">
           Ranked by ideas summoned. Keep pulling to climb.
         </p>
       </div>

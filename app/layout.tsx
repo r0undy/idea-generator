@@ -20,8 +20,19 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://kiroverse-week5.vercel.app"),
   title: "Kiro Idea Vault",
   description: "Pull for your next project idea, Kiro-style.",
+  openGraph: {
+    title: "Kiro Idea Vault - Kiroverse Week 5",
+    description: "Pull for your next project idea, Kiro-style.",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kiro Idea Vault - Kiroverse Week 5",
+    description: "Pull for your next project idea, Kiro-style.",
+  },
 };
 
 export default async function RootLayout({
@@ -67,7 +78,7 @@ export default async function RootLayout({
                 Kiro Idea Vault
               </span>
               <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-brand/80">
-                Gacha Edition
+                Kiroverse Week 5
               </span>
             </span>
           </Link>
